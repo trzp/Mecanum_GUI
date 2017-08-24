@@ -5,16 +5,17 @@ from pygame_button import button
 from pygame_label import label
 from pygame_anchors import anchors
 from pygame_textbox import textbox
-from pygame_callback import gui_callback
 from vector import vector2D
 import time
 from serial import Serial
 from MecanumBase import MecanumBase
 import numpy as np
-import sys
+import sys,os
 
-VELTRANSLATE = 30
-VELROTATE = 1
+VELTRANSLATE = 40
+VELROTATE = 2.5
+
+script_path = os.path.split(sys.argv[0])[0]
 
 class GUI_mecanum:
     """
@@ -39,7 +40,7 @@ class GUI_mecanum:
         self.END =0
         pygame.init()
         self.scr = pygame.display.set_mode((537,429),0,32)
-        self.background = pygame.image.load('background.jpg').convert()
+        self.background = pygame.image.load(script_path+'//'+'background.jpg').convert()
 
         self.label = label(self.scr,(460,30),'left',text=u'端口:',textsize=13,forecolor=(0,0,0,0),textcolor=(255,255,0),textfont='stsong')
         self.textbox = textbox(self.scr,(460+self.label.getsize()[0],30),anchor='left',siz = (32,20),textcolor=(255,0,0),forecolor=(200,200,200,255),cusorcolor=(255,0,0))
@@ -58,14 +59,15 @@ class GUI_mecanum:
     def openbtcallback(self):
         if not self.seropened:
             try:
-                #self.ser = Serial(int(self.textbox.gettext),115200)
+                self.ser = Serial(int(self.textbox.gettext),115200)
+                self.cmdbuf = self.MD.setPort('wireless')
                 self.seropened = 1
                 self.label2.text = u'已连接'
                 self.openbt.text = u'断开'
             except:
                 self.label2.text = u'连接失败'
         else:
-            #self.ser.close()
+            self.ser.close()
             self.seropened = 0
             self.label2.text = u'已断开'
             self.openbt.text = u'连接'
@@ -137,10 +139,10 @@ class GUI_mecanum:
                                 if self.cmd == 1:
                                     self.cmdbuf = self.MD.translateV(VELTRANSLATE,int(a1))
                                     self.lstclk = time.clock()
-                                    self.endclk = self.lstclk+self.mpv.Len/VELTRANSLATE
+                                    self.endclk = self.lstclk+4*self.mpv.Len/VELTRANSLATE
                                     self.driving = True
                                 elif self.cmd == 2:
-                                    self.cmdbuf = self.MD.rotateV(VELROTATE*np.sign(a2))
+                                    self.cmdbuf = self.MD.rotateV(-VELROTATE*np.sign(a2))
                                     self.lstclk = time.clock()
                                     self.endclk = self.lstclk+abs(a2)/VELROTATE
                                     self.driving = True
@@ -152,7 +154,6 @@ class GUI_mecanum:
                         self.driving = False
                         self.cmdbuf = self.MD.stop()
                         self.cursorlabel.visible=False
-                print self.cmdbuf.encode('hex')
                 self.ser.write(self.cmdbuf)
 
             pygame.display.update()
@@ -164,7 +165,8 @@ class GUI_mecanum:
             for i in range(20):
                 self.ser.write(self.cmdbuf)
                 time.sleep(0.05)
-            self.ser.close() 
+            self.ser.close()
+        self.ser.close()
         pygame.quit()
 
 if __name__ == '__main__':

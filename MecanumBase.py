@@ -42,6 +42,7 @@ class MecanumBase():
         d: 0-forward 90 left 180 back 270 right
         '''
         if v<0:v=0
+        v = 0.815*v    #calibrate the vel
         return self.__encode__(v,d,0,0)
 
     def __encode__A(self,v): #v度/s 分辨率0.1du/s
@@ -49,11 +50,13 @@ class MecanumBase():
         if v<0:		d = 0
         elif v>0:	d = 1
         else:	return self.__encode__(0,0,0,0)
+        v = 0.8*v
         return self.__encode__(0,0,abs(v)*10,d)
 
     def rotateV(self,v): #度/s
         '''rotate with vel v, rudely
         v positive->counterclockwise'''
+        
         return self.__encode__A(v)
 
     def _dir(self,v):
@@ -80,3 +83,12 @@ class MecanumBase():
     def turn(self,v,r):
         '''turn with car style. v-vel: +forward;-backward; r-radius of turn: -left turn; + right turn.'''
         return self.__encode__T(v,r)
+
+    def setPort(self,port='wireless'):
+        #控制选择，支持有线和蓝牙端口。任何时候任何一个端口都可以通过该命令抢占控制权。
+        if port == 'wire':
+            cmd = [85,170,30,253,8,188,0,0,0,0,0,0,0,67]
+            return ''.join([pack('B',i) for i in cmd])
+        elif port == 'wireless':
+            cmd = [85,170,30,253,8,187,0,0,0,0,0,0,0,68]
+            return ''.join([pack('B',i) for i in cmd])
